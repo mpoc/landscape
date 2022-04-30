@@ -1,0 +1,19 @@
+{
+  "name": "landscape",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mpoc/landscape.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mpoc/landscape/issues"
+  },
+  "homepage": "https://github.com/mpoc/landscape#readme"
+}
