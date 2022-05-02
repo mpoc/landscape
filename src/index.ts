@@ -1,73 +1,73 @@
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise';
+import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise'
 
 // import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import WebGL from 'three/examples/jsm/capabilities/WebGL.js';
+import WebGL from 'three/examples/jsm/capabilities/WebGL.js'
 
 if (WebGL.isWebGL2Available() === false) {
-
-    document.body.appendChild(WebGL.getWebGL2ErrorMessage());
-
+    document.body.appendChild(WebGL.getWebGL2ErrorMessage())
 }
 
-let renderer, scene, camera;
-let mesh;
+let renderer, scene, camera
+let mesh
 
-init();
-animate();
+init()
+animate()
 
 function init() {
+    renderer = new THREE.WebGLRenderer()
+    renderer.setPixelRatio(window.devicePixelRatio)
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    document.body.appendChild(renderer.domElement)
 
-    renderer = new THREE.WebGLRenderer();
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    scene = new THREE.Scene()
 
-    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        100
+    )
+    camera.position.set(0, 0, 2)
 
-    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 0, 2);
-
-    new OrbitControls(camera, renderer.domElement);
+    new OrbitControls(camera, renderer.domElement)
 
     // Texture
 
-    const size = 128;
-    const data = new Uint8Array(size * size * size);
+    const size = 128
+    const data = new Uint8Array(size * size * size)
 
-    let i = 0;
-    const perlin = new ImprovedNoise();
-    const vector = new THREE.Vector3();
+    let i = 0
+    const perlin = new ImprovedNoise()
+    const vector = new THREE.Vector3()
 
     for (let z = 0; z < size; z++) {
-
         for (let y = 0; y < size; y++) {
-
             for (let x = 0; x < size; x++) {
+                vector.set(x, y, z).divideScalar(size)
 
-                vector.set(x, y, z).divideScalar(size);
+                const d = perlin.noise(
+                    vector.x * 6.5,
+                    vector.y * 6.5,
+                    vector.z * 6.5
+                )
 
-                const d = perlin.noise(vector.x * 6.5, vector.y * 6.5, vector.z * 6.5);
-
-                data[i++] = d * 128 + 128;
-
+                data[i++] = d * 128 + 128
             }
-
         }
-
     }
 
-    const texture = new THREE.Data3DTexture(data, size, size, size);
-    texture.format = THREE.RedFormat;
-    texture.minFilter = THREE.LinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-    texture.unpackAlignment = 1;
-    texture.needsUpdate = true;
+    const texture = new THREE.Data3DTexture(data, size, size, size)
+    texture.format = THREE.RedFormat
+    texture.minFilter = THREE.LinearFilter
+    texture.magFilter = THREE.LinearFilter
+    texture.unpackAlignment = 1
+    texture.needsUpdate = true
 
     // Material
 
-    const vertexShader = /* glsl */`
+    const vertexShader = /* glsl */ `
 					in vec3 position;
 					uniform mat4 modelMatrix;
 					uniform mat4 modelViewMatrix;
@@ -81,9 +81,9 @@ function init() {
 						vDirection = position - vOrigin;
 						gl_Position = projectionMatrix * mvPosition;
 					}
-				`;
+				`
 
-    const fragmentShader = /* glsl */`
+    const fragmentShader = /* glsl */ `
 					precision highp float;
 					precision highp sampler3D;
 					uniform mat4 modelViewMatrix;
@@ -143,59 +143,52 @@ function init() {
 						}
 						if ( color.a == 0.0 ) discard;
 					}
-				`;
+				`
 
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const geometry = new THREE.BoxGeometry(1, 1, 1)
     const material = new THREE.RawShaderMaterial({
         glslVersion: THREE.GLSL3,
         uniforms: {
             map: { value: texture },
             cameraPos: { value: new THREE.Vector3() },
             threshold: { value: 0.6 },
-            steps: { value: 200 }
+            steps: { value: 200 },
         },
         vertexShader,
         fragmentShader,
         side: THREE.BackSide,
-    });
+    })
 
-    mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
+    mesh = new THREE.Mesh(geometry, material)
+    scene.add(mesh)
 
     //
 
-    const parameters = { threshold: 0.6, steps: 200 };
+    const parameters = { threshold: 0.6, steps: 200 }
 
     function update() {
-
-        material.uniforms.threshold.value = parameters.threshold;
-        material.uniforms.steps.value = parameters.steps;
-
+        material.uniforms.threshold.value = parameters.threshold
+        material.uniforms.steps.value = parameters.steps
     }
 
     // const gui = new GUI();
     // gui.add(parameters, 'threshold', 0, 1, 0.01).onChange(update);
     // gui.add(parameters, 'steps', 0, 300, 1).onChange(update);
 
-    window.addEventListener('resize', onWindowResize);
-
+    window.addEventListener('resize', onWindowResize)
 }
 
 function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight
+    camera.updateProjectionMatrix()
 
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-
-    renderer.setSize(window.innerWidth, window.innerHeight);
-
+    renderer.setSize(window.innerWidth, window.innerHeight)
 }
 
 function animate() {
+    requestAnimationFrame(animate)
 
-    requestAnimationFrame(animate);
+    mesh.material.uniforms.cameraPos.value.copy(camera.position)
 
-    mesh.material.uniforms.cameraPos.value.copy(camera.position);
-
-    renderer.render(scene, camera);
-
+    renderer.render(scene, camera)
 }
